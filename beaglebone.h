@@ -5,7 +5,7 @@
 #include <iostream>
 using namespace std;
 
-#define BONE_CAPEMGR "/sys/devices/bone_capemgr.9/slots"
+#define BONE_CAPEMGR "/sys/devices/bone_capemgr.8/slots"
 #define MAX_BUF 64
 #define LOG_OUTPUT 1
 #define SYSFS_PWM_DIR "/sys/class/pwm"
