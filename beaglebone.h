@@ -192,7 +192,6 @@ LOG::Write("FAIL", "PWM::PIN::SetDuty()", "Unable to set PIN Duty Cycle.");
 			return fd; }
 			snprintf(vbuf, sizeof(vbuf), "%d", duty_ns);
 			write(fd, vbuf, sizeof(vbuf));
-			cout << vbuf << endl;
 			close(fd);
 			duty_ref = duty_ns;
 			return 0;
