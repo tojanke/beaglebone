@@ -1,1 +1,1 @@
--O3 -Wall -Wno-write-strings -pg
+-O3 -Wall -Wno-write-strings
