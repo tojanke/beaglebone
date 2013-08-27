@@ -1,1 +1,4 @@
-13222
+Beaglebone Black C++ Library
+-GPIO
+-PWM
+-User LEDs
