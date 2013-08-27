@@ -8,12 +8,14 @@ using namespace std;
 #define BONE_CAPEMGR "/sys/devices/bone_capemgr.9/slots"
 #define MAX_BUF 64
 #define LOG_OUTPUT 1
+#define SYSFS_PWM_DIR "/sys/class/pwm"
+#define SYSFS_GPIO_DIR "/sys/class/gpio"
+#define LOG_FILE "log.txt"
 
 enum PIN_DIRECTION{ INPUT=0, OUTPUT=1 };
 enum PIN_VALUE{	LOW=0, HIGH=1, FAIL=13 };
 
 #if LOG_OUTPUT
-#define LOG_FILE "log.txt"
 namespace LOG {
 	int Write(char* Type, char* Parent, char* Event) {
 		time_t tTime = time(0);
@@ -50,9 +52,7 @@ namespace LOG {
 	}
 }
 #endif
-namespace PWM {
-	#define SYSFS_PWM_DIR "/sys/class/pwm"
-	
+namespace PWM {	
 	int SlotExists(const string & moduleName) {
 		std::ifstream in(BONE_CAPEMGR);
 		in.exceptions(ios::badbit);
@@ -233,8 +233,6 @@ LOG::Write("FAIL", "PWM::PIN::Disable()", "Unable to disable PIN.");
 }
 
 namespace GPIO {
-	#define SYSFS_GPIO_DIR "/sys/class/gpio"
-
 	class PIN {
 	public:
 		PIN( unsigned int gpio, PIN_DIRECTION flag ) {
