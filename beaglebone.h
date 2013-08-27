@@ -73,7 +73,11 @@ namespace PWM {
 		if (SlotExists("FJ-GPIO") == 0)  {
 			int DTO;
 			DTO = open(BONE_CAPEMGR, O_WRONLY);
-			if (DTO < 0) { return 1; }
+			if (DTO < 0) { 
+#if LOG_OUTPUT
+LOG::Write("FAIL", "PWM::InstOverlay()", "Unable to install FJ-GPIO!");
+#endif
+			return 1; }
 			write(DTO, "FJ-GPIO", sizeof("FJ-GPIO"));
 			close(DTO);
 		}
@@ -81,7 +85,11 @@ namespace PWM {
 		if (SlotExists("am33xx_pwm") == 0) {
 			int DTP;
 			DTP = open(BONE_CAPEMGR, O_WRONLY);
-			if (DTP < 0) { return 1; }
+			if (DTP < 0) { 
+#if LOG_OUTPUT
+LOG::Write("FAIL", "PWM::InstOverlay()", "Unable to install am33xx_pwm!");
+#endif
+			return 1; }
 			write(DTP, "am33xx_pwm", sizeof("am33xx_pwm"));
 			close(DTP);
 		}
@@ -97,7 +105,11 @@ namespace PWM {
 			int fd, len;
 			char buf[MAX_BUF];
 			fd = open(SYSFS_PWM_DIR "/export", O_WRONLY);
-			if (fd < 0) { }
+			if (fd < 0) { 
+#if LOG_OUTPUT
+LOG::Write("FAIL", "PWM::PIN()", "Unable to export Pin.");
+#endif
+			}
 			len = snprintf(buf, sizeof(buf), "%d", ID);
 			write(fd, buf, len);
 			close(fd);
@@ -108,7 +120,11 @@ namespace PWM {
 			int fd, len;
 			char buf[MAX_BUF];
 			fd = open(SYSFS_PWM_DIR "/unexport", O_WRONLY);
-			if (fd < 0) { }
+			if (fd < 0) { 
+#if LOG_OUTPUT
+LOG::Write("FAIL", "PWM::~PIN()", "Unable to unexport Pin.");
+#endif
+			}
 			len = snprintf(buf, sizeof(buf), "%d", ID);
 			write(fd, buf, len);
 			close(fd);
@@ -120,11 +136,15 @@ namespace PWM {
 			snprintf(buf, sizeof(buf), SYSFS_PWM_DIR "/pwm%d/period_ns", ID);
 			fd = open(buf, O_RDONLY);
 			if (fd < 0) {
-				return 0;
+#if LOG_OUTPUT
+LOG::Write("FAIL", "PWM::PIN::GetPeriod()", "Unable to get PIN Period.");
+#endif				
+			return 1;
 			}
 			read(fd, &ch, 1);
 			return ch;
 			close(fd);
+			return 0;
 		}
 		int SetPeriod( int period_hz ) {
 			int period_ns = 1000000000 / period_hz;
@@ -132,7 +152,11 @@ namespace PWM {
 			char buf[MAX_BUF];
 			snprintf(buf, sizeof(buf), SYSFS_PWM_DIR "/pwm%d/period_ns", ID);
 			fd = open(buf, O_WRONLY);
-			if (fd < 0) { return fd; }
+			if (fd < 0) { 
+#if LOG_OUTPUT
+LOG::Write("FAIL", "PWM::PIN::SetPeriod()", "Unable to set PIN Period.");
+#endif	
+			return fd; }
 			len = snprintf(buf, sizeof(buf), "%d", period_ns);
 			write(fd, buf, len);
 			close(fd);
@@ -145,10 +169,15 @@ namespace PWM {
 			char ch;
 			snprintf(buf, sizeof(buf), SYSFS_PWM_DIR "/pwm%d/duty_ns", ID);
 			fd = open(buf, O_RDONLY);
-			if (fd < 0) { return 0; }
+			if (fd < 0) { 
+#if LOG_OUTPUT
+LOG::Write("FAIL", "PWM::PIN::GetDuty()", "Unable to get PIN Duty Cycle.");
+#endif	
+			return 1; }
 			read(fd, &ch, 1);
 			return ch;
 			close(fd);
+			return 0;
 		}
 		int SetDuty( int duty_pp ) {
 			int duty_ns = period_ref / 1000 * duty_pp;
@@ -156,7 +185,11 @@ namespace PWM {
 			char dbuf[MAX_BUF], vbuf[MAX_BUF];
 			snprintf(dbuf, sizeof(dbuf), SYSFS_PWM_DIR "/pwm%d/duty_ns", ID);
 			fd = open(dbuf, O_WRONLY);
-			if (fd < 0) { return fd; }
+			if (fd < 0) { 
+#if LOG_OUTPUT
+LOG::Write("FAIL", "PWM::PIN::SetDuty()", "Unable to set PIN Duty Cycle.");
+#endif	
+			return fd; }
 			snprintf(vbuf, sizeof(vbuf), "%d", duty_ns);
 			write(fd, vbuf, sizeof(vbuf));
 			cout << vbuf << endl;
@@ -169,7 +202,11 @@ namespace PWM {
 			char buf[MAX_BUF];
 			snprintf(buf, sizeof(buf), SYSFS_PWM_DIR "/pwm%d/run", ID);
 			fd = open(buf, O_WRONLY);
-			if (fd < 0) { return fd; }
+			if (fd < 0) { 
+#if LOG_OUTPUT
+LOG::Write("FAIL", "PWM::PIN::Enable()", "Unable to enable PIN.");
+#endif	
+			return fd; }
 			write(fd, "1", sizeof("1"));
 			close(fd);
 			return 0;
@@ -179,7 +216,11 @@ namespace PWM {
 			char buf[MAX_BUF];
 			snprintf(buf, sizeof(buf), SYSFS_PWM_DIR "/pwm%d/run", ID);
 			fd = open(buf, O_WRONLY);
-			if (fd < 0) { return fd; }
+			if (fd < 0) { 
+#if LOG_OUTPUT
+LOG::Write("FAIL", "PWM::PIN::Disable()", "Unable to disable PIN.");
+#endif				
+			return fd; }
 			write(fd, "0", sizeof("0"));
 			close(fd);
 			return 0;
@@ -201,7 +242,11 @@ namespace GPIO {
 			int fd, len;
 			char buf[MAX_BUF];
 			fd = open(SYSFS_GPIO_DIR "/export", O_WRONLY);
-			if (fd < 0) { }
+			if (fd < 0) { 
+#if LOG_OUTPUT
+LOG::Write("FAIL", "GPIO::PIN()", "Unable to export PIN.");
+#endif
+			}
 			len = snprintf(buf, sizeof(buf), "%d", ID);
 			write(fd, buf, len);
 			close(fd);
@@ -211,7 +256,11 @@ namespace GPIO {
 			int fd, len;
 			char buf[MAX_BUF];
 			fd = open(SYSFS_GPIO_DIR "/unexport", O_WRONLY);
-			if (fd < 0) { }
+			if (fd < 0) { 
+#if LOG_OUTPUT
+LOG::Write("FAIL", "GPIO::~PIN()", "Unable to unexport PIN.");
+#endif
+			}
 			len = snprintf(buf, sizeof(buf), "%d", ID);
 			write(fd, buf, len);
 			close(fd);
@@ -223,6 +272,9 @@ namespace GPIO {
 			snprintf(buf, sizeof(buf), SYSFS_GPIO_DIR "/gpio%d/value", ID);
 			fd = open(buf, O_RDONLY);
 			if (fd < 0) {
+#if LOG_OUTPUT
+LOG::Write("FAIL", "GPIO::PIN::GetValue()", "Unable to get PIN value.");
+#endif
 				return FAIL;
 			}
 			read(fd, &ch, 1);
@@ -235,7 +287,11 @@ namespace GPIO {
 			char buf[MAX_BUF];
 			snprintf(buf, sizeof(buf), SYSFS_GPIO_DIR "/gpio%d/value", ID);
 			fd = open(buf, O_WRONLY);
-			if (fd < 0) { return fd; }
+			if (fd < 0) { 
+#if LOG_OUTPUT
+LOG::Write("FAIL", "GPIO::PIN::SetValue()", "Unable to set PIN value.");
+#endif
+			return fd; }
 			if (value==LOW)	{ write(fd, "0", sizeof("0")); }
 			else { write(fd, "1", sizeof("1")); }
 			close(fd);
@@ -246,8 +302,11 @@ namespace GPIO {
 			char buf[MAX_BUF];
 			snprintf(buf, sizeof(buf), SYSFS_GPIO_DIR  "/gpio%d/direction", ID);
 			fd = open(buf, O_WRONLY);
-			if (fd < 0) { return fd; }
-
+			if (fd < 0) { 
+#if LOG_OUTPUT
+LOG::Write("FAIL", "GPIO::PIN::SetDalue()", "Unable to set PIN direction.");
+#endif
+			return fd; }
 			if (flag == OUTPUT) { write(fd, "out", sizeof("out")); }
 			else { write(fd, "in", sizeof("in")); }
 			close(fd);
@@ -278,14 +337,22 @@ namespace USERLED {
 		~LED() { }
 		int on( ) { 
 			int fd = open(Brightness, O_WRONLY);
-			if (fd < 0) { return fd; }
+			if (fd < 0) { 
+#if LOG_OUTPUT
+LOG::Write("FAIL", "USERLED::LED::on()", "Unable turn on LED.");
+#endif			
+			return fd; }
 			write(fd, "1", sizeof("1"));			
 			close(fd);
 			return 0;
 		}
 		int on( int duration ) {
 			int fd = open(Brightness, O_WRONLY);
-			if (fd < 0) { return fd; }
+			if (fd < 0) { 
+#if LOG_OUTPUT
+LOG::Write("FAIL", "USERLED::LED::on()", "Unable turn on LED.");
+#endif
+			return fd; }
 			write(fd, "1", 2);			
 			usleep(duration);
 			write(fd, "0", sizeof("0"));
@@ -294,7 +361,11 @@ namespace USERLED {
 		}
 		int off() {
 			int fd = open(Brightness, O_WRONLY);
-			if (fd < 0) { return fd; }
+			if (fd < 0) { 
+#if LOG_OUTPUT
+LOG::Write("FAIL", "USERLED::LED::off()", "Unable turn off LED.");
+#endif			
+			return fd; }
 			write(fd, "0", sizeof("0"));			
 			close(fd);
 			return 0;
@@ -308,22 +379,38 @@ namespace USERLED {
 		int fd;
 
 		fd = open(LED_ADDR[0], O_WRONLY);
-		if (fd < 0) { return fd; }
+		if (fd < 0) { 
+#if LOG_OUTPUT
+LOG::Write("FAIL", "USERLED::ULedInit()", "Unable to initialize LED.");
+#endif		
+		return fd; }
 		write(fd, "0", sizeof("0"));			
 		close(fd);
 
 		fd = open(LED_ADDR[1], O_WRONLY);
-		if (fd < 0) { return fd; }
+		if (fd < 0) { 
+#if LOG_OUTPUT
+LOG::Write("FAIL", "USERLED::ULedInit()", "Unable to initialize LED.");
+#endif		
+		return fd; }
 		write(fd, "0", sizeof("0"));			
 		close(fd);
 
 		fd = open(LED_ADDR[2], O_WRONLY);
-		if (fd < 0) { return fd; }
+		if (fd < 0) { 
+#if LOG_OUTPUT
+LOG::Write("FAIL", "USERLED::ULedInit()", "Unable to initialize LED.");
+#endif		
+		return fd; }
 		write(fd, "0", sizeof("0"));			
 		close(fd);
 
 		fd = open(LED_ADDR[3], O_WRONLY);
-		if (fd < 0) { return fd; }
+		if (fd < 0) { 
+#if LOG_OUTPUT
+LOG::Write("FAIL", "USERLED::ULedInit()", "Unable to initialize LED.");
+#endif		
+		return fd; }
 		write(fd, "0", sizeof("0"));			
 		close(fd);
 
