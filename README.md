@@ -3,7 +3,7 @@ Beaglebone Black C++ Library
 -PWM
 -User LEDs
 -I2C
--SENSORS
+-Sensors
   -Invensens MPU6050
 
 All Code is personally developed by Tobias Janke.
