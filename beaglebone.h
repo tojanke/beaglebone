@@ -3,17 +3,17 @@
 #include <fstream>
 #include <time.h>
 #include <iostream>
+#include <linux/i2c-dev.h>
+#include <sys/ioctl.h>
 using namespace std;
 
 #define BONE_CAPEMGR "/sys/devices/bone_capemgr.8/slots"
 #define MAX_BUF 64
+#define I2C_BUF 0x80
 #define LOG_OUTPUT 1
 #define SYSFS_PWM_DIR "/sys/class/pwm"
 #define SYSFS_GPIO_DIR "/sys/class/gpio"
 #define LOG_FILE "log.txt"
-
-enum PIN_DIRECTION{ INPUT=0, OUTPUT=1 };
-enum PIN_VALUE{	LOW=0, HIGH=1, FAIL=13 };
 
 #if LOG_OUTPUT
 namespace LOG {
@@ -52,7 +52,7 @@ namespace LOG {
 	}
 }
 #endif
-namespace PWM {	
+namespace PWM {
 	int SlotExists(const string & moduleName) {
 		std::ifstream in(BONE_CAPEMGR);
 		in.exceptions(ios::badbit);
@@ -73,23 +73,25 @@ namespace PWM {
 		if (SlotExists("FJ-GPIO") == 0)  {
 			int DTO;
 			DTO = open(BONE_CAPEMGR, O_WRONLY);
-			if (DTO < 0) { 
-#if LOG_OUTPUT
-LOG::Write("FAIL", "PWM::InstOverlay()", "Unable to install FJ-GPIO!");
-#endif
-			return 1; }
+			if (DTO < 0) {
+				#if LOG_OUTPUT
+					LOG::Write((char *)"FAIL", (char *)"PWM::InstOverlay()", (char *)"Unable to install FJ-GPIO!");
+				#endif
+				return 1;
+			}
 			write(DTO, "FJ-GPIO", sizeof("FJ-GPIO"));
 			close(DTO);
 		}
-		
+
 		if (SlotExists("am33xx_pwm") == 0) {
 			int DTP;
 			DTP = open(BONE_CAPEMGR, O_WRONLY);
-			if (DTP < 0) { 
-#if LOG_OUTPUT
-LOG::Write("FAIL", "PWM::InstOverlay()", "Unable to install am33xx_pwm!");
-#endif
-			return 1; }
+			if (DTP < 0) {
+				#if LOG_OUTPUT
+					LOG::Write((char *)"FAIL", (char *)"PWM::InstOverlay()", (char *)"Unable to install am33xx_pwm!");
+				#endif
+				return 1;
+			}
 			write(DTP, "am33xx_pwm", sizeof("am33xx_pwm"));
 			close(DTP);
 		}
@@ -105,10 +107,10 @@ LOG::Write("FAIL", "PWM::InstOverlay()", "Unable to install am33xx_pwm!");
 			int fd, len;
 			char buf[MAX_BUF];
 			fd = open(SYSFS_PWM_DIR "/export", O_WRONLY);
-			if (fd < 0) { 
-#if LOG_OUTPUT
-LOG::Write("FAIL", "PWM::PIN()", "Unable to export Pin.");
-#endif
+			if (fd < 0) {
+				#if LOG_OUTPUT
+					LOG::Write((char *)"FAIL", (char *)"PWM::PIN()", (char *)"Unable to export Pin.");
+				#endif
 			}
 			len = snprintf(buf, sizeof(buf), "%d", ID);
 			write(fd, buf, len);
@@ -120,10 +122,10 @@ LOG::Write("FAIL", "PWM::PIN()", "Unable to export Pin.");
 			int fd, len;
 			char buf[MAX_BUF];
 			fd = open(SYSFS_PWM_DIR "/unexport", O_WRONLY);
-			if (fd < 0) { 
-#if LOG_OUTPUT
-LOG::Write("FAIL", "PWM::~PIN()", "Unable to unexport Pin.");
-#endif
+			if (fd < 0) {
+				#if LOG_OUTPUT
+					LOG::Write((char *)"FAIL", (char *)"PWM::~PIN()", (char *)"Unable to unexport Pin.");
+				#endif
 			}
 			len = snprintf(buf, sizeof(buf), "%d", ID);
 			write(fd, buf, len);
@@ -136,10 +138,10 @@ LOG::Write("FAIL", "PWM::~PIN()", "Unable to unexport Pin.");
 			snprintf(buf, sizeof(buf), SYSFS_PWM_DIR "/pwm%d/period_ns", ID);
 			fd = open(buf, O_RDONLY);
 			if (fd < 0) {
-#if LOG_OUTPUT
-LOG::Write("FAIL", "PWM::PIN::GetPeriod()", "Unable to get PIN Period.");
-#endif				
-			return 1;
+				#if LOG_OUTPUT
+					LOG::Write((char *)"FAIL", (char *)"PWM::PIN::GetPeriod()", (char *)"Unable to get PIN Period.");
+				#endif
+				return 1;
 			}
 			read(fd, &ch, 1);
 			return ch;
@@ -152,11 +154,12 @@ LOG::Write("FAIL", "PWM::PIN::GetPeriod()", "Unable to get PIN Period.");
 			char buf[MAX_BUF];
 			snprintf(buf, sizeof(buf), SYSFS_PWM_DIR "/pwm%d/period_ns", ID);
 			fd = open(buf, O_WRONLY);
-			if (fd < 0) { 
-#if LOG_OUTPUT
-LOG::Write("FAIL", "PWM::PIN::SetPeriod()", "Unable to set PIN Period.");
-#endif	
-			return fd; }
+			if (fd < 0) {
+				#if LOG_OUTPUT
+					LOG::Write((char *)"FAIL", (char *)"PWM::PIN::SetPeriod()", (char *)"Unable to set PIN Period.");
+				#endif
+				return fd;
+			}
 			len = snprintf(buf, sizeof(buf), "%d", period_ns);
 			write(fd, buf, len);
 			close(fd);
@@ -169,11 +172,12 @@ LOG::Write("FAIL", "PWM::PIN::SetPeriod()", "Unable to set PIN Period.");
 			char ch;
 			snprintf(buf, sizeof(buf), SYSFS_PWM_DIR "/pwm%d/duty_ns", ID);
 			fd = open(buf, O_RDONLY);
-			if (fd < 0) { 
-#if LOG_OUTPUT
-LOG::Write("FAIL", "PWM::PIN::GetDuty()", "Unable to get PIN Duty Cycle.");
-#endif	
-			return 1; }
+			if (fd < 0) {
+				#if LOG_OUTPUT
+					LOG::Write((char *)"FAIL", (char *)"PWM::PIN::GetDuty()", (char *)"Unable to get PIN Duty Cycle.");
+				#endif
+				return 1;
+			}
 			read(fd, &ch, 1);
 			return ch;
 			close(fd);
@@ -185,11 +189,12 @@ LOG::Write("FAIL", "PWM::PIN::GetDuty()", "Unable to get PIN Duty Cycle.");
 			char dbuf[MAX_BUF], vbuf[MAX_BUF];
 			snprintf(dbuf, sizeof(dbuf), SYSFS_PWM_DIR "/pwm%d/duty_ns", ID);
 			fd = open(dbuf, O_WRONLY);
-			if (fd < 0) { 
-#if LOG_OUTPUT
-LOG::Write("FAIL", "PWM::PIN::SetDuty()", "Unable to set PIN Duty Cycle.");
-#endif	
-			return fd; }
+			if (fd < 0) {
+				#if LOG_OUTPUT
+					LOG::Write((char *)"FAIL", (char *)"PWM::PIN::SetDuty()", (char *)"Unable to set PIN Duty Cycle.");
+				#endif
+				return fd;
+			}
 			snprintf(vbuf, sizeof(vbuf), "%d", duty_ns);
 			write(fd, vbuf, sizeof(vbuf));
 			close(fd);
@@ -201,11 +206,12 @@ LOG::Write("FAIL", "PWM::PIN::SetDuty()", "Unable to set PIN Duty Cycle.");
 			char buf[MAX_BUF];
 			snprintf(buf, sizeof(buf), SYSFS_PWM_DIR "/pwm%d/run", ID);
 			fd = open(buf, O_WRONLY);
-			if (fd < 0) { 
-#if LOG_OUTPUT
-LOG::Write("FAIL", "PWM::PIN::Enable()", "Unable to enable PIN.");
-#endif	
-			return fd; }
+			if (fd < 0) {
+				#if LOG_OUTPUT
+					LOG::Write((char *)"FAIL", (char *)"PWM::PIN::Enable()", (char *)"Unable to enable PIN.");
+				#endif
+				return fd;
+			}
 			write(fd, "1", sizeof("1"));
 			close(fd);
 			return 0;
@@ -215,11 +221,12 @@ LOG::Write("FAIL", "PWM::PIN::Enable()", "Unable to enable PIN.");
 			char buf[MAX_BUF];
 			snprintf(buf, sizeof(buf), SYSFS_PWM_DIR "/pwm%d/run", ID);
 			fd = open(buf, O_WRONLY);
-			if (fd < 0) { 
-#if LOG_OUTPUT
-LOG::Write("FAIL", "PWM::PIN::Disable()", "Unable to disable PIN.");
-#endif				
-			return fd; }
+			if (fd < 0) {
+				#if LOG_OUTPUT
+					LOG::Write((char *)"FAIL", (char *)"PWM::PIN::Disable()", (char *)"Unable to disable PIN.");
+				#endif
+				return fd;
+			}
 			write(fd, "0", sizeof("0"));
 			close(fd);
 			return 0;
@@ -232,6 +239,8 @@ LOG::Write("FAIL", "PWM::PIN::Disable()", "Unable to disable PIN.");
 }
 
 namespace GPIO {
+	enum PIN_DIRECTION{ INPUT=0, OUTPUT=1 };
+	enum PIN_VALUE{	LOW=0, HIGH=1, FAIL=13 };
 	class PIN {
 	public:
 		PIN( unsigned int gpio, PIN_DIRECTION flag ) {
@@ -239,10 +248,10 @@ namespace GPIO {
 			int fd, len;
 			char buf[MAX_BUF];
 			fd = open(SYSFS_GPIO_DIR "/export", O_WRONLY);
-			if (fd < 0) { 
-#if LOG_OUTPUT
-LOG::Write("FAIL", "GPIO::PIN()", "Unable to export PIN.");
-#endif
+			if (fd < 0) {
+				#if LOG_OUTPUT
+					LOG::Write((char *)"FAIL", (char *)"GPIO::PIN()", (char *)"Unable to export PIN.");
+				#endif
 			}
 			len = snprintf(buf, sizeof(buf), "%d", ID);
 			write(fd, buf, len);
@@ -253,10 +262,10 @@ LOG::Write("FAIL", "GPIO::PIN()", "Unable to export PIN.");
 			int fd, len;
 			char buf[MAX_BUF];
 			fd = open(SYSFS_GPIO_DIR "/unexport", O_WRONLY);
-			if (fd < 0) { 
-#if LOG_OUTPUT
-LOG::Write("FAIL", "GPIO::~PIN()", "Unable to unexport PIN.");
-#endif
+			if (fd < 0) {
+				#if LOG_OUTPUT
+					LOG::Write((char *)"FAIL", (char *)"GPIO::~PIN()", (char *)"Unable to unexport PIN.");
+#				endif
 			}
 			len = snprintf(buf, sizeof(buf), "%d", ID);
 			write(fd, buf, len);
@@ -269,25 +278,26 @@ LOG::Write("FAIL", "GPIO::~PIN()", "Unable to unexport PIN.");
 			snprintf(buf, sizeof(buf), SYSFS_GPIO_DIR "/gpio%d/value", ID);
 			fd = open(buf, O_RDONLY);
 			if (fd < 0) {
-#if LOG_OUTPUT
-LOG::Write("FAIL", "GPIO::PIN::GetValue()", "Unable to get PIN value.");
-#endif
+				#if LOG_OUTPUT
+					LOG::Write((char *)"FAIL", (char *)"GPIO::PIN::GetValue()", (char *)"Unable to get PIN value.");
+				#endif
 				return FAIL;
 			}
 			read(fd, &ch, 1);
-			if (ch != '0') { return HIGH;}
-			else { return LOW; }
 			close(fd);
+			if (ch != '0') { return HIGH;}
+			return LOW;
+
 		}
 		int SetValue( PIN_VALUE value ) {
 			int fd;
 			char buf[MAX_BUF];
 			snprintf(buf, sizeof(buf), SYSFS_GPIO_DIR "/gpio%d/value", ID);
 			fd = open(buf, O_WRONLY);
-			if (fd < 0) { 
-#if LOG_OUTPUT
-LOG::Write("FAIL", "GPIO::PIN::SetValue()", "Unable to set PIN value.");
-#endif
+			if (fd < 0) {
+				#if LOG_OUTPUT
+					LOG::Write((char *)"FAIL", (char *)"GPIO::PIN::SetValue()", (char *)"Unable to set PIN value.");
+				#endif
 			return fd; }
 			if (value==LOW)	{ write(fd, "0", sizeof("0")); }
 			else { write(fd, "1", sizeof("1")); }
@@ -299,11 +309,12 @@ LOG::Write("FAIL", "GPIO::PIN::SetValue()", "Unable to set PIN value.");
 			char buf[MAX_BUF];
 			snprintf(buf, sizeof(buf), SYSFS_GPIO_DIR  "/gpio%d/direction", ID);
 			fd = open(buf, O_WRONLY);
-			if (fd < 0) { 
-#if LOG_OUTPUT
-LOG::Write("FAIL", "GPIO::PIN::SetDalue()", "Unable to set PIN direction.");
-#endif
-			return fd; }
+			if (fd < 0) {
+				#if LOG_OUTPUT
+					LOG::Write((char *)"FAIL", (char *)"GPIO::PIN::SetDalue()", (char *)"Unable to set PIN direction.");
+				#endif
+				return fd;
+			}
 			if (flag == OUTPUT) { write(fd, "out", sizeof("out")); }
 			else { write(fd, "in", sizeof("in")); }
 			close(fd);
@@ -315,42 +326,44 @@ LOG::Write("FAIL", "GPIO::PIN::SetDalue()", "Unable to set PIN direction.");
 };
 
 namespace USERLED {
-	char* LED_ADDR[] = {	"/sys/class/leds/beaglebone:green:usr0/brightness", 
-				"/sys/class/leds/beaglebone:green:usr1/brightness", 
-				"/sys/class/leds/beaglebone:green:usr2/brightness", 
-				"/sys/class/leds/beaglebone:green:usr3/brightness"};
-	
+	char* LED_ADDR[] = {	(char *)"/sys/class/leds/beaglebone:green:usr0/brightness",
+			(char *)"/sys/class/leds/beaglebone:green:usr1/brightness",
+			(char *)"/sys/class/leds/beaglebone:green:usr2/brightness",
+			(char *)"/sys/class/leds/beaglebone:green:usr3/brightness"};
+
 
 	class LED {
 	public:
-		LED() { 
+		LED() {
 			index = 0;
 			Brightness = LED_ADDR[index];
 		}
-		LED( int custom ) { 
+		LED( int custom ) {
 			index = custom;
-			Brightness = LED_ADDR[index];	
+			Brightness = LED_ADDR[index];
 		}
 		~LED() { }
-		int on( ) { 
+		int on( ) {
 			int fd = open(Brightness, O_WRONLY);
-			if (fd < 0) { 
-#if LOG_OUTPUT
-LOG::Write("FAIL", "USERLED::LED::on()", "Unable turn on LED.");
-#endif			
-			return fd; }
-			write(fd, "1", sizeof("1"));			
+			if (fd < 0) {
+				#if LOG_OUTPUT
+					LOG::Write((char *)"FAIL", (char *)"USERLED::LED::on()", (char *)"Unable turn on LED.");
+				#endif
+				return fd;
+			}
+			write(fd, "1", sizeof("1"));
 			close(fd);
 			return 0;
 		}
 		int on( int duration ) {
 			int fd = open(Brightness, O_WRONLY);
-			if (fd < 0) { 
-#if LOG_OUTPUT
-LOG::Write("FAIL", "USERLED::LED::on()", "Unable turn on LED.");
-#endif
-			return fd; }
-			write(fd, "1", 2);			
+			if (fd < 0) {
+				#if LOG_OUTPUT
+					LOG::Write((char *)"FAIL", (char *)"USERLED::LED::on()", (char *)"Unable turn on LED.");
+				#endif
+				return fd;
+			}
+			write(fd, "1", 2);
 			usleep(duration);
 			write(fd, "0", sizeof("0"));
 			close(fd);
@@ -358,12 +371,13 @@ LOG::Write("FAIL", "USERLED::LED::on()", "Unable turn on LED.");
 		}
 		int off() {
 			int fd = open(Brightness, O_WRONLY);
-			if (fd < 0) { 
-#if LOG_OUTPUT
-LOG::Write("FAIL", "USERLED::LED::off()", "Unable turn off LED.");
-#endif			
-			return fd; }
-			write(fd, "0", sizeof("0"));			
+			if (fd < 0) {
+				#if LOG_OUTPUT
+					LOG::Write((char *)"FAIL", (char *)"USERLED::LED::off()", (char *)"Unable turn off LED.");
+				#endif
+				return fd;
+			}
+			write(fd, "0", sizeof("0"));
 			close(fd);
 			return 0;
 		}
@@ -376,39 +390,43 @@ LOG::Write("FAIL", "USERLED::LED::off()", "Unable turn off LED.");
 		int fd;
 
 		fd = open(LED_ADDR[0], O_WRONLY);
-		if (fd < 0) { 
-#if LOG_OUTPUT
-LOG::Write("FAIL", "USERLED::ULedInit()", "Unable to initialize LED.");
-#endif		
-		return fd; }
-		write(fd, "0", sizeof("0"));			
+		if (fd < 0) {
+			#if LOG_OUTPUT
+				LOG::Write((char *)"FAIL", (char *)"USERLED::ULedInit()", (char *)"Unable to initialize LED.");
+			#endif
+			return fd;
+		}
+		write(fd, "0", sizeof("0"));
 		close(fd);
 
 		fd = open(LED_ADDR[1], O_WRONLY);
-		if (fd < 0) { 
-#if LOG_OUTPUT
-LOG::Write("FAIL", "USERLED::ULedInit()", "Unable to initialize LED.");
-#endif		
-		return fd; }
-		write(fd, "0", sizeof("0"));			
+		if (fd < 0) {
+			#if LOG_OUTPUT
+				LOG::Write((char *)"FAIL", (char *)"USERLED::ULedInit()", (char *)"Unable to initialize LED.");
+			#endif
+			return fd;
+		}
+		write(fd, "0", sizeof("0"));
 		close(fd);
 
 		fd = open(LED_ADDR[2], O_WRONLY);
-		if (fd < 0) { 
-#if LOG_OUTPUT
-LOG::Write("FAIL", "USERLED::ULedInit()", "Unable to initialize LED.");
-#endif		
-		return fd; }
-		write(fd, "0", sizeof("0"));			
+		if (fd < 0) {
+			#if LOG_OUTPUT
+				LOG::Write((char *)"FAIL", (char *)"USERLED::ULedInit()", (char *)"Unable to initialize LED.");
+			#endif
+			return fd;
+		}
+		write(fd, "0", sizeof("0"));
 		close(fd);
 
 		fd = open(LED_ADDR[3], O_WRONLY);
-		if (fd < 0) { 
-#if LOG_OUTPUT
-LOG::Write("FAIL", "USERLED::ULedInit()", "Unable to initialize LED.");
-#endif		
-		return fd; }
-		write(fd, "0", sizeof("0"));			
+		if (fd < 0) {
+			#if LOG_OUTPUT
+				LOG::Write((char *)"FAIL", (char *)"USERLED::ULedInit()", (char *)"Unable to initialize LED.");
+			#endif
+			return fd;
+		}
+		write(fd, "0", sizeof("0"));
 		close(fd);
 
 		return 0;
@@ -423,5 +441,175 @@ LOG::Write("FAIL", "USERLED::ULedInit()", "Unable to initialize LED.");
 				ULED[L].on(intervall);
 			}
 		}
-	}	
+	}
+}
+
+namespace I2C {
+#define I2C_BUS_1 "/dev/i2c-1"
+#define I2C_BUS_2 "/dev/i2c-2"
+#define I2C_BUS_3 "/dev/i2c-3"
+	int WriteByte(char * i2cbus, char chip_address, char data_address, char value){
+		int bus = open(i2cbus, O_RDWR);
+		if ( bus == -1 ) {
+			#if LOG_OUTPUT
+				LOG::Write((char *)"FAIL", (char *)"I2C::WriteByte()", (char *)"Unable to open I2C Bus");
+			#endif
+			return(1);
+		}
+		int device = ioctl(bus, I2C_SLAVE,chip_address ) ;
+		if (device==-1){
+			#if LOG_OUTPUT
+				LOG::Write((char *)"FAIL", (char *)"I2C::WriteByte()", (char *)"Unable to Register I2C Slave Address");
+			#endif
+			return(2);
+		}
+		char buffer[2];
+			buffer[0] = data_address;
+			buffer[1] = value;
+		if ( write(bus, buffer, 2) != 2) {
+			#if LOG_OUTPUT
+				LOG::Write((char *)"FAIL", (char *)"I2C::WriteByte()", (char *)"Unable to Write I2C Value");
+			#endif
+			return(3);
+		}
+		close(bus);
+		return 0;
+	}
+	char ReadByte(char * i2cbus, char chip_address, char data_address){
+		int bus = open(i2cbus, O_RDWR);
+		if ( bus == -1 ){
+			#if LOG_OUTPUT
+				LOG::Write((char *)"FAIL", (char *)"I2C::ReadByte()", (char *)"Unable to open I2C Bus");
+			#endif
+			return(1);
+		}
+		int device = ioctl(bus, I2C_SLAVE, chip_address) ;
+		if (device==-1){
+			#if LOG_OUTPUT
+				LOG::Write((char *)"FAIL", (char *)"I2C::ReadByte()", (char *)"Unable to Register I2C Slave Address");
+			#endif
+			return(2);
+		}
+		char buffer[1];
+		buffer[0] = data_address;
+		if (write(bus, buffer, 1) != 1) {
+			#if LOG_OUTPUT
+				LOG::Write((char *)"FAIL", (char *)"I2C::ReadByte()", (char *)"Unable to prepare I2C Read");
+			#endif
+			return(3);}
+		char value[1];
+		if (read(bus, value, 1) != 1){
+			#if LOG_OUTPUT
+				LOG::Write((char *)"FAIL", (char *)"I2C::ReadByte()", (char *)"Unable to read I2C Address Value");
+			#endif
+			return(4);
+		}
+		close(bus);
+		return value[0];
+	}
+}
+
+namespace SENSORS {
+#define MPU6050_ADDRESS_L 0x68
+#define MPU6050_ADDRESS_H 0x69
+#define MPU6050_PWR_MGMT_1 0x6B
+#define MPU6050_RESET 0x80
+#define MPU6050_GYROSCOPE_RANGE_SEL 0x1B
+#define MPU6050_ACCELEROMETER_RANGE_SEL 0x1C
+#define MPU6050_WHO_AM_I 0x75
+
+	enum MPU6050_CLOCK_SOURCE {
+		INTERNAL = 0,
+		PLL_X_AXIS = 1,
+		PLL_Y_AXIS = 2,
+		PLL_Z_AXIS = 3,
+		PLL_EXTERNAL_32_KHZ = 4,
+		PLL_EXTERNAL_19_MHZ = 5
+	};
+	enum MPU6050_GYROSCOPE_RANGE {
+		PLUSMINUS_250 = 0,
+		PLUSMINUS_500 = 1,
+		PLUSMINUS_1000 = 2,
+		PLUSMINUS_2000 = 3
+	};
+	enum MPU6050_ACCELEROMETER_RANGE {
+		PLUSMINUS_2_G = 0,
+		PLUSMINUS_4_G = 1,
+		PLUSMINUS_8_G = 2,
+		PLUSMINUS_16_G = 3
+	};
+
+	class MPU6050 {
+	public:
+		MPU6050() {
+			Address = MPU6050_ADDRESS_L;
+			Bus = (char*)I2C_BUS_1 ;
+		}
+		MPU6050( char * i2cbus, char device_address) {
+			Address = device_address;
+			Bus = i2cbus;
+		}
+	private:
+		char * Bus;
+		char Address;
+	public:
+		int Reset () {
+			int werr = I2C::WriteByte(Bus, Address, MPU6050_PWR_MGMT_1, MPU6050_RESET);
+			if (werr != 0) {
+				#if LOG_OUTPUT
+					LOG::Write((char *)"FAIL", (char *)"SENSORS::MPU6050::SetClockSource()", (char *)"I2C Read Error");
+				#endif
+			}
+			return 0;
+		}
+		int SetClockSource( MPU6050_CLOCK_SOURCE clksrc) {
+			char g_reg = I2C::ReadByte(Bus, Address, MPU6050_PWR_MGMT_1);
+			char value = clksrc;
+			g_reg = g_reg & 0b11111000;
+			value = g_reg | value;
+			int werr = I2C::WriteByte(Bus, Address, MPU6050_PWR_MGMT_1, value);
+			if (werr != 0) {
+				#if LOG_OUTPUT
+					LOG::Write((char *)"FAIL", (char *)"SENSORS::MPU6050::SetClockSource()", (char *)"I2C Read Error");
+				#endif
+			}
+			return 0;
+		}
+		int SetAccelerometerRange( MPU6050_ACCELEROMETER_RANGE range ) {
+			char a_reg = I2C::ReadByte(Bus, Address, MPU6050_ACCELEROMETER_RANGE_SEL);
+			char value = range << 3;
+			a_reg = a_reg & 0b11100111;
+			value = a_reg | value;
+			int werr = I2C::WriteByte(Bus, Address, MPU6050_ACCELEROMETER_RANGE_SEL, value);
+			if (werr != 0) {
+				#if LOG_OUTPUT
+					LOG::Write((char *)"FAIL", (char *)"SENSORS::MPU6050::SetClockSource()", (char *)"I2C Read Error");
+				#endif
+			}
+			return 0;
+		}
+		int SetGyroscopeRange( MPU6050_GYROSCOPE_RANGE range ) {
+			char g_reg = I2C::ReadByte(Bus, Address, MPU6050_GYROSCOPE_RANGE_SEL);
+			char value = range << 3;
+			g_reg = g_reg & 0b11100111;
+			value = g_reg | value;
+			int werr = I2C::WriteByte(Bus, Address, MPU6050_GYROSCOPE_RANGE_SEL, value);
+			if (werr != 0) {
+				#if LOG_OUTPUT
+					LOG::Write((char *)"FAIL", (char *)"SENSORS::MPU6050::SetClockSource()", (char *)"I2C Read Error");
+				#endif
+			}
+			return 0;
+		}
+		int Calibrate( MPU6050_ACCELEROMETER_RANGE a_range, MPU6050_GYROSCOPE_RANGE g_range, MPU6050_CLOCK_SOURCE clksrc) {
+			Reset();
+			SetClockSource(clksrc);
+			SetAccelerometerRange(a_range);
+			SetGyroscopeRange(g_range);
+			return 0;
+		}
+		char WhoAmI() {
+			return I2C::ReadByte(Bus, Address, MPU6050_WHO_AM_I);
+		}
+	};
 }
