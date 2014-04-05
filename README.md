@@ -4,4 +4,4 @@ Beaglebone Black C++ Library
 -User LEDs
 
 All Code is personally developed by Tobias Janke.
-Copyright Tobias Janke, 2013.
+Copyright Tobias Janke, 2014.
