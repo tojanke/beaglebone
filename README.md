@@ -6,5 +6,4 @@ Beaglebone Black C++ Library
 -Sensors
   -Invensens MPU6050
 
-All Code is personally developed by Tobias Janke.
 Copyright Tobias Janke, 2014.
